@@ -72,6 +72,7 @@ services:
       - "3001:3000"
     volumes:
       - ./observability/grafana/data:/var/lib/grafana
+      - ./observability/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
     networks:
       - observability
 

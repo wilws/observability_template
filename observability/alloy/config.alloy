@@ -39,7 +39,7 @@ otelcol.processor.batch "traces" {
 
 otelcol.exporter.otlphttp "tempo" {
   client {
-    endpoint = "tempo:4318"
+    endpoint = "http://tempo:4318"
 
     tls {
       insecure = true
@@ -53,18 +53,30 @@ otelcol.exporter.otlphttp "tempo" {
 // --------------------
 otelcol.processor.batch "logs" {
   output {
-    logs = [otelcol.exporter.loki.loki.input]
+    logs = [otelcol.exporter.otlphttp.loki.input]
   }
 }
-otelcol.exporter.loki "loki" {
-  forward_to = [loki.write.default.receiver]
+
+otelcol.exporter.otlphttp "loki" {
+  client {
+    endpoint = "http://loki:3100/otlp"
+  }
 }
+
 
 loki.write "default" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"
   }
 }
+
+/*
+otelcol.exporter.loki "loki" {
+  forward_to = [loki.write.default.receiver]
+}
+*/
+
+
 
 
 // --------------------
