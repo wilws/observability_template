@@ -3,10 +3,15 @@ logging {
   format = "logfmt"
 }
 
+// --------------------
+// OTLP receiver
+// OTLP HTTP:
+//   traces → 4318
+//   logs   → 4318
+//   metrics → 4318
+// --------------------
+
 otelcol.receiver.otlp "default" {
-  grpc {
-    endpoint = "0.0.0.0:4317"
-  }
 
   http {
     endpoint = "0.0.0.0:4318"
@@ -14,21 +19,126 @@ otelcol.receiver.otlp "default" {
 
   output {
     traces = [otelcol.processor.batch.traces.input]
+    logs = [otelcol.processor.batch.logs.input]
+    metrics =  [otelcol.processor.batch.metrics.input]
   }
 }
+
+
+// --------------------
+// TRACES → TEMPO
+// For Tempo, we're using the OTLP protocol.
+// Tempo exposes an OTLP/HTTP receiver on 4318.
+// --------------------
 
 otelcol.processor.batch "traces" {
   output {
-    traces = [otelcol.exporter.otlp.tempo.input]
+    traces = [otelcol.exporter.otlphttp.tempo.input]
   }
 }
 
-otelcol.exporter.otlp "tempo" {
+otelcol.exporter.otlphttp "tempo" {
   client {
-    endpoint = "tempo:4317"
+    endpoint = "tempo:4318"
 
     tls {
       insecure = true
     }
   }
 }
+
+// --------------------
+// LOGS → LOKI
+// Push the log data by using loki's api
+// --------------------
+otelcol.processor.batch "logs" {
+  output {
+    logs = [otelcol.exporter.loki.loki.input]
+  }
+}
+otelcol.exporter.loki "loki" {
+  forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+
+// --------------------
+// Method 1 
+// METRICS → PROMETHEUS (PUSH)
+// Alloy push to prometheus
+// App ──> OTLP metrics PUSH ──> Alloy -> Prometheus
+// --------------------
+
+otelcol.processor.batch "metrics" {
+  output {
+    metrics = [otelcol.exporter.prometheus.default.input]
+  }
+}
+
+otelcol.exporter.prometheus "default" {
+  forward_to = [prometheus.remote_write.default.receiver]
+}
+
+prometheus.remote_write "default" {
+  endpoint  {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+
+
+
+/*
+// --------------------
+//  Method 2 
+//  Alloy -> App | Alloy -> PROMETHEUS
+//  (1) Alloy scrape the metrics from app
+//  (2) Alloy push the metics to  Prometheus
+// --------------------
+
+
+prometheus.scrape "app" {
+  targets = [
+
+    {
+      __address__ = "app1:8080",
+    },
+    {
+      __address__ = "app2:8080",
+    },
+    {
+      __address__ = "app3:8080",
+    },
+  ]
+
+  forward_to = [prometheus.remote_write.default.receiver]
+}
+
+prometheus.remote_write "default" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+
+
+// --------------------
+//  Method 3 
+//  Alloy -> App | PROMETHEUS -> Alloy 
+//  (1) Alloy scrape the metrics from app
+//  (2) Prometheus pull the data from  Alloy
+// --------------------
+server {
+  http {
+    listen_address = "0.0.0.0"
+    listen_port    = 12345
+  }
+}
+
+
+*/
