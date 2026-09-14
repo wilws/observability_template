@@ -1,11 +1,19 @@
 {
+  "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "node --import tsx --import ./src/otel.ts ./src/index.ts",
     "build": "tsx",
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.80.0",
+    "@opentelemetry/exporter-metrics-otlp-grpc": "^0.222.0",
+    "@opentelemetry/sdk-logs": "^0.222.0",
+    "@opentelemetry/sdk-metrics": "^2.11.0",
+    "@opentelemetry/sdk-node": "^0.222.0",
+    "express": "^5.2.1",
+    "undefined": "^0.1.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
