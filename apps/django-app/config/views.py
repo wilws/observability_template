@@ -1,13 +1,19 @@
 from django.http import JsonResponse
 
 from opentelemetry import metrics
-from opentelemetry.sdk.metrics import MeterProvider
+
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 
 
 
 def ping(request):
+    
+    logger.info("ping request")
     
     meter = metrics.get_meter("django-app")
 

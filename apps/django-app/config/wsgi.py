@@ -13,7 +13,7 @@ from django.core.wsgi import get_wsgi_application
 
 
 # for otlm 
-from .otel import setup_tracing,setup_metric
+from .otel import setup_tracing,setup_metric,setup_log
 from opentelemetry.instrumentation.django import DjangoInstrumentor
 
 
@@ -21,6 +21,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 setup_tracing()
 setup_metric()
+setup_log()
 DjangoInstrumentor().instrument()
 application = get_wsgi_application()
 

@@ -96,3 +96,35 @@ def setup_metric():
     print("METRIC SETUP RAN", flush=True)
     
  
+
+
+import logging
+
+from opentelemetry.sdk._logs import LoggerProvider
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+from opentelemetry.sdk._logs import LoggingHandler
+
+
+def setup_log():
+    
+    log_exporter = OTLPLogExporter(
+        endpoint="http://localhost:4318/v1/logs",
+        # insecure=True,
+    )
+
+    logger_provider = LoggerProvider(
+        resource=resource,
+    )
+
+    logger_provider.add_log_record_processor(
+        BatchLogRecordProcessor(log_exporter)
+    )
+    
+    handler = LoggingHandler(
+        level=logging.INFO,
+        logger_provider=logger_provider,
+    )
+
+    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().addHandler(handler)
