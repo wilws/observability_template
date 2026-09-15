@@ -42,7 +42,9 @@ services:
       - -config.file=/etc/loki/loki.yml
     volumes:
       - ./observability/loki/loki.yml:/etc/loki/loki.yml:ro
-      - ./observability/loki/data:/loki
+      # Named volume, not a bind mount: keeps Loki's WAL off the host
+      # filesystem, whose free space Loki checks and throttles on.
+      - loki-data:/loki
     ports:
       - "3100:3100"
     networks:
@@ -79,10 +81,8 @@ services:
 networks:
   observability:
 
-# Self created in their own folder
-# volumes:
-#   prometheus-data:
-#   loki-data:
-#   tempo-data:
-#   grafana-data:
-
+volumes:
+  # Loki lives in a Docker-managed volume rather than ./observability/loki/data.
+  # Loki refuses writes when the filesystem holding its WAL is over 90% full,
+  # and a bind mount exposes the whole host disk to that check.
+  loki-data:
